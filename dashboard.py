@@ -1,4 +1,5 @@
 
+import os
 import requests
 import pandas as pd
 import streamlit as st
@@ -8,7 +9,10 @@ import plotly.express as px
 # CONFIGURATION
 # ============================================================
 
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    "https://national-weather-analytics-platform-v2.onrender.com"
+).rstrip("/")
 
 st.set_page_config(
     page_title="National Weather Analytics Platform",
@@ -27,7 +31,7 @@ def api_get(endpoint, params=None):
         response = requests.get(
             f"{API_BASE_URL}{endpoint}",
             params=params,
-            timeout=30
+            timeout=60
         )
         response.raise_for_status()
         return response.json(), None
@@ -41,7 +45,7 @@ def get_cities():
     data, error = api_get("/weather/cities")
 
     if error or not isinstance(data, dict):
-        return [], error
+        return [], error or "Invalid API response."
 
     return data.get("cities", []), None
 
@@ -181,11 +185,14 @@ cities, cities_error = get_cities()
 
 if cities_error or not cities:
     st.sidebar.error("Unable to retrieve cities from the API.")
+
     st.error(
-        "Cannot load city information. Make sure the FastAPI server "
-        "is running at http://127.0.0.1:8000."
+        "Cannot load city information from the configured backend. "
+        f"Check that the API is available at {API_BASE_URL}."
     )
+
     st.stop()
+
 
 city = st.sidebar.selectbox(
     "Select City",
@@ -216,7 +223,7 @@ st.sidebar.caption("API: " + API_BASE_URL)
 health, health_error = api_get("/health")
 
 if health_error:
-    st.error("Backend API is unavailable.")
+    st.error(f"Backend API is unavailable: {health_error}")
     st.stop()
 
 st.sidebar.success("Backend API Connected")
@@ -345,10 +352,12 @@ with overview_tab:
 
     if "time" not in forecast_df.columns:
         st.warning("The forecast response does not contain a time column.")
+
     else:
         chart_col1, chart_col2 = st.columns(2)
 
         with chart_col1:
+
             if temperature_col:
                 fig = px.line(
                     forecast_df,
@@ -361,6 +370,7 @@ with overview_tab:
                         "time": "Time"
                     }
                 )
+
                 st.plotly_chart(fig, use_container_width=True)
 
             if humidity_col:
@@ -375,9 +385,11 @@ with overview_tab:
                         "time": "Time"
                     }
                 )
+
                 st.plotly_chart(fig, use_container_width=True)
 
         with chart_col2:
+
             if rain_col:
                 fig = px.bar(
                     forecast_df,
@@ -389,6 +401,7 @@ with overview_tab:
                         "time": "Time"
                     }
                 )
+
                 st.plotly_chart(fig, use_container_width=True)
 
             if wind_col:
@@ -403,6 +416,7 @@ with overview_tab:
                         "time": "Time"
                     }
                 )
+
                 st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Multi-City Analytics")
@@ -411,6 +425,7 @@ with overview_tab:
 
     if analytics_error:
         st.warning(f"Analytics unavailable: {analytics_error}")
+
     else:
         analytics_df = make_dataframe(analytics_data)
 
@@ -420,8 +435,10 @@ with overview_tab:
                 use_container_width=True,
                 hide_index=True
             )
+
         else:
             st.json(analytics_data)
+
 
 # ============================================================
 # TAB 2: FORECAST ANALYSIS
@@ -432,6 +449,7 @@ with forecast_tab:
     st.subheader(f"{city} — Hourly Weather Forecast")
 
     if "time" in forecast_df.columns:
+
         available_metrics = {
             "Temperature": temperature_col,
             "Humidity": humidity_col,
@@ -446,6 +464,7 @@ with forecast_tab:
         }
 
         if available_metrics:
+
             selected_metric = st.selectbox(
                 "Choose Weather Variable",
                 options=list(available_metrics.keys())
@@ -471,6 +490,7 @@ with forecast_tab:
         hide_index=True
     )
 
+
 # ============================================================
 # TAB 3: MACHINE LEARNING PERFORMANCE
 # ============================================================
@@ -483,10 +503,12 @@ with ml_tab:
 
     if evaluation_error:
         st.error(f"Unable to load ML evaluation: {evaluation_error}")
+
     else:
         evaluation_df = make_dataframe(evaluation_data)
 
         if not evaluation_df.empty:
+
             st.dataframe(
                 evaluation_df,
                 use_container_width=True,
@@ -500,6 +522,7 @@ with ml_tab:
             ).columns.tolist()
 
             if numeric_cols:
+
                 selected_metric = st.selectbox(
                     "Select Metric to Compare",
                     options=numeric_cols,
@@ -512,6 +535,7 @@ with ml_tab:
                 )
 
                 if label_col:
+
                     fig = px.bar(
                         evaluation_df,
                         x=label_col,
@@ -536,10 +560,12 @@ with ml_tab:
 
     if prediction_error:
         st.warning(f"Predictions unavailable: {prediction_error}")
+
     else:
         prediction_df = make_dataframe(prediction_data)
 
         if not prediction_df.empty:
+
             st.info(
                 "These are historical held-out test predictions, "
                 "not live forecasts."
@@ -562,6 +588,7 @@ with ml_tab:
             )
 
             if actual_col and predicted_col:
+
                 prediction_time = find_column(
                     prediction_df,
                     ["target_time", "observation_time"]
@@ -578,6 +605,7 @@ with ml_tab:
                     fig,
                     use_container_width=True
                 )
+
         else:
             st.json(prediction_data)
 
@@ -589,8 +617,10 @@ with ml_tab:
 
     if model_error:
         st.warning(f"Model status unavailable: {model_error}")
+
     else:
         st.json(model_data)
+
 
 # ============================================================
 # TAB 4: ANOMALY MONITORING
@@ -604,6 +634,7 @@ with anomaly_tab:
 
     if anomaly_error:
         st.error(f"Unable to load anomalies: {anomaly_error}")
+
     else:
         anomaly_df = make_dataframe(anomaly_data)
 
@@ -615,10 +646,12 @@ with anomaly_tab:
             )
 
             if city_column:
+
                 city_anomalies = anomaly_df[
                     anomaly_df[city_column].astype(str).str.lower()
                     == city.lower()
                 ]
+
             else:
                 city_anomalies = anomaly_df
 
@@ -641,6 +674,7 @@ with anomaly_tab:
         "Anomalies are statistical outliers detected by the model. "
         "They are not automatically confirmed severe weather events."
     )
+
 
 # ============================================================
 # TAB 5: RAW DATA
@@ -668,6 +702,7 @@ with data_tab:
         file_name=f"{city.lower()}_weather_forecast.csv",
         mime="text/csv"
     )
+
 
 # ============================================================
 # FOOTER
