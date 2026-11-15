@@ -1,0 +1,31 @@
+{
+    "total_records": 175440,
+    "total_cities": 10,
+    "missing_values": {
+        "time": 0,
+        "temperature_2m": 0,
+        "relative_humidity_2m": 0,
+        "precipitation": 0,
+        "wind_speed_10m": 0,
+        "wind_direction_10m": 0,
+        "surface_pressure": 0,
+        "cloud_cover": 0,
+        "weather_code": 0,
+        "city": 0,
+        "latitude": 0,
+        "longitude": 0,
+        "timezone": 0,
+        "hour": 0,
+        "day": 0,
+        "month": 0,
+        "year": 0,
+        "day_of_week": 0,
+        "season": 0,
+        "is_weekend": 0,
+        "temperature_category": 0,
+        "rain_indicator": 0
+    },
+    "duplicate_records": 0,
+    "date_start": "2024-01-01 00:00:00",
+    "date_end": "2025-12-31 23:00:00"
+}
